@@ -4,6 +4,7 @@ lsp.preset("recommended")
 
 lsp.ensure_installed({
   'tsserver',
+  'pyright',
   'rust_analyzer',
 })
 
@@ -32,6 +33,10 @@ cmp_mappings['<Tab>'] = nil
 cmp_mappings['<S-Tab>'] = nil
 
 lsp.setup_nvim_cmp({
+  preselect = 'none',
+  completion = {
+     completeopt = 'menu,menuone,noinsert,noselect'
+  },
   mapping = cmp_mappings
 })
 
