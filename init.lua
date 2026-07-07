@@ -965,11 +965,16 @@ require("lazy").setup({
 	},
 	{ -- Highlight, edit, and navigate code
 		"nvim-treesitter/nvim-treesitter",
+		-- The `master` branch (old .configs API) is incompatible with Neovim 0.12+
+		-- and causes `attempt to call method 'range' (a nil value)` crashes on
+		-- markdown fenced code blocks (neovim/neovim#39032). `main` is the
+		-- 0.12-only rewrite and is required instead. Repo is archived
+		-- (2026-04-03) but `main` is the final, working state.
+		branch = "main",
+		lazy = false, -- main branch does not support lazy-loading
 		build = ":TSUpdate",
-		main = "nvim-treesitter.configs", -- Sets main module to use for opts
-		-- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-		opts = {
-			ensure_installed = {
+		config = function()
+			local ts_langs = {
 				"bash",
 				"c",
 				"diff",
@@ -981,18 +986,22 @@ require("lazy").setup({
 				"query",
 				"vim",
 				"vimdoc",
-			},
-			-- Autoinstall languages that are not installed
-			auto_install = true,
-			highlight = {
-				enable = true,
-				-- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-				--  If you are experiencing weird indenting issues, add the language to
-				--  the list of additional_vim_regex_highlighting and disabled languages for indent.
-				additional_vim_regex_highlighting = { "ruby" },
-			},
-			indent = { enable = true, disable = { "ruby" } },
-		},
+			}
+			require("nvim-treesitter").install(ts_langs)
+
+			-- [[ Configure Treesitter ]] See `:help nvim-treesitter`
+			-- Highlighting and indentation are provided by Neovim core now;
+			-- nvim-treesitter only installs parsers/queries, so wire both up here.
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = ts_langs,
+				callback = function()
+					vim.treesitter.start()
+					if vim.bo.filetype ~= "ruby" then
+						vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+					end
+				end,
+			})
+		end,
 		-- There are additional nvim-treesitter modules that you can use to interact
 		-- with nvim-treesitter. You should go explore a few and see what interests you:
 		--
